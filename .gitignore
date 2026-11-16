@@ -1,0 +1,11 @@
+# DSH memory vault (agent state; never commit it)
+/.memory/
+
+# Build outputs
+Source/bin/
+Source/obj/
+*.user
+.vs/
+/tools/
+.build/DEVELOPMENT_GUIDE.docx
+/docs/
