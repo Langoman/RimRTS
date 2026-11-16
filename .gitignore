@@ -9,3 +9,7 @@ Source/obj/
 /tools/
 .build/DEVELOPMENT_GUIDE.docx
 /docs/
+Source/bin/
+Source/obj/
+*.user
+.vs/
