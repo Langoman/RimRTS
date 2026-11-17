@@ -6,16 +6,20 @@ namespace RimRTS.Skirmish
     /// <summary>
     /// Entry routine for skirmish mode.
     ///
-    /// Called from the main menu instead of the vanilla scenario picker. It starts a
-    /// NEW game from the RimRTS_Skirmish scenario and lands directly on the vanilla
-    /// "select starting site" page, which is the match-setup step that chooses the map
-    /// to drop into.
+    /// Called from the main menu instead of the vanilla scenario picker. It starts a NEW
+    /// game from the RimRTS_Skirmish scenario and lands directly on the match-setup screen
+    /// that lets the player pick the biome to drop into.
     ///
-    /// Vanilla normally walks the player through storyteller -> planet settings ->
-    /// starting site. This routine skips the first two pages by driving the vanilla
-    /// planet-settings page headlessly: that page owns world generation, so reusing it
-    /// keeps our planet identical to a vanilla one (same defaults, same factions, same
-    /// generation code) without copying any generation logic into this mod.
+    /// Vanilla walks the player through storyteller -> planet settings -> starting site ->
+    /// ideology preset. This routine replaces all four screens with a single biome screen:
+    ///  - the storyteller is assigned in code (a plain field, no screen needed);
+    ///  - the planet-settings page is driven headlessly, because it owns world generation
+    ///    (same defaults, factions and generation code as vanilla, no copied logic);
+    ///  - the starting-site page is replaced by <see cref="Page_ChooseBiome"/>;
+    ///  - the ideology preset page is never shown, but the state it would have created is
+    ///    produced by <see cref="ApplyIdeologySetup"/>.
+    /// After the biome screen the vanilla scenario config pages continue and the match
+    /// starts through the regular PageUtility.InitGameStart() path.
     /// </summary>
     public static class ScenarioEntry
     {
@@ -37,47 +41,79 @@ namespace RimRTS.Skirmish
             Page_SelectScenario origin = new Page_SelectScenario();
             Page_SelectScenario.BeginScenarioConfiguration(def.scenario, origin);
 
-            // We skip the storyteller page, but Storyteller is a required Game field
-            // (map generation, incidents and the UI all read it). Assign the default
-            // that the skipped page would have assigned.
+            // Storyteller is a required Game field (map generation, incidents and the UI
+            // read it). The skipped storyteller page assigns it, so we assign the same
+            // vanilla defaults here.
             Current.Game.storyteller = new Storyteller(StorytellerDefOf.Cassandra, DifficultyDefOf.Rough);
 
-            // The chain is: storyteller, planet settings, starting site, [ideo], [scenario
-            // config pages]. We only need the starting-site page; it already carries the
-            // rest of the chain (next / nextAct) that vanilla built for us.
-            Page_SelectStartingSite sitePage = FindPage<Page_SelectStartingSite>(origin.next);
-            if (sitePage == null)
+            // Walk the vanilla chain until the first page that still belongs to match
+            // setup (normally a scenario config page or the end of the chain). The pages
+            // we skip are: storyteller, planet settings, starting site, ideology preset.
+            Page followUpPage = FindFirstPageAfterVanillaSetup(origin.next);
+
+            Page_ChooseBiome biomePage = new Page_ChooseBiome { next = followUpPage };
+            if (followUpPage != null)
             {
-                // Defensive fallback: if the chain ever changes shape, still let the
-                // player through the normal flow instead of leaving them stuck.
-                Log.Error("[RimRTS] Could not find the vanilla starting-site page; opening the normal setup flow instead.");
-                if (origin.next != null)
-                {
-                    Find.WindowStack.Add(origin.next);
-                }
-                return;
+                followUpPage.prev = biomePage;
+            }
+            else
+            {
+                // No scenario config pages left: finishing the biome screen starts the match.
+                biomePage.nextAct = PageUtility.InitGameStart;
             }
 
-            // Generate the planet with vanilla code, then let vanilla open the site page.
-            // PreOpen() fills the page's planet defaults (seed, coverage, rainfall, factions,
-            // ...) exactly as the real page would; GenerateWorld() queues the same vanilla
-            // world-generation long event the "Generate world" button uses.
-            HeadlessWorldParams worldGeneration = new HeadlessWorldParams { next = sitePage };
-            sitePage.prev = worldGeneration;
+            // Generate the planet with vanilla code. PreOpen() fills the page's planet
+            // defaults (seed, coverage, rainfall, factions, ...) exactly as the real page
+            // would; GenerateWorld() queues the same vanilla world-generation long event
+            // the "Generate world" button uses. When generation finishes, vanilla opens
+            // page.next, which is our biome screen (see HeadlessWorldParams comment).
+            HeadlessWorldParams worldGeneration = new HeadlessWorldParams { next = biomePage };
             worldGeneration.PreOpen();
             worldGeneration.GenerateWorld();
         }
 
-        private static T FindPage<T>(Page first) where T : Page
+        /// <summary>
+        /// Creates the ideology state that the removed ideoligion screen used to create:
+        /// the player's classic ideoligion plus generated ideos for the other factions.
+        /// Without it a new game has no player ideoligion and pawn generation misbehaves.
+        /// Must run after <see cref="Start"/> (Game and storyteller exist) and after the
+        /// planet exists; the biome screen calls it when the player confirms the match.
+        /// </summary>
+        internal static void ApplyIdeologySetup()
         {
-            for (Page page = first; page != null; page = page.next)
+            if (!ModsConfig.IdeologyActive)
             {
-                if (page is T match)
+                return;
+            }
+
+            // PostOpen() is where the vanilla page does the generation work. We never add
+            // the page to the window stack, so only this data step runs, no screen.
+            new Page_ChooseIdeoPreset().PostOpen();
+
+            // With no preset selection the player is in classic ideology mode; vanilla's
+            // DoClassic() path sets the same flag and runs the scenario hook.
+            Find.IdeoManager.classicMode = true;
+            Find.Scenario.PostIdeoChosen();
+        }
+
+        private static Page FindFirstPageAfterVanillaSetup(Page page)
+        {
+            for (; page != null; page = page.next)
+            {
+                if (!IsVanillaSetupPage(page))
                 {
-                    return match;
+                    return page;
                 }
             }
             return null;
+        }
+
+        private static bool IsVanillaSetupPage(Page page)
+        {
+            return page is Page_SelectStoryteller
+                || page is Page_CreateWorldParams
+                || page is Page_SelectStartingSite
+                || page is Page_ChooseIdeoPreset;
         }
 
         /// <summary>
