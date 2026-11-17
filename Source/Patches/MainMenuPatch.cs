@@ -5,20 +5,25 @@ using Verse;
 namespace RimRTS.Patches
 {
     /// <summary>
-    /// Shows the "about this mod" window on the title screen, once per game launch.
+    /// Shows the "about this mod" dialog on the title screen, once per game launch.
     ///
-    /// How the hook was chosen: the vanilla main menu is drawn by
-    /// MainMenuDrawer.MainMenuOnGUI(). We append our window after it has drawn,
-    /// so the popup always appears on top of the menu, and we never have to
-    /// touch vanilla layout code.
+    /// This version deliberately references no UnityEngine types, so it builds with
+    /// only Assembly-CSharp.dll + 0Harmony.dll. It uses vanilla's Verse.Dialog_MessageBox,
+    /// whose public constructor takes only Verse.TaggedString/string/Action/bool types.
     /// </summary>
     [HarmonyPatch(typeof(MainMenuDrawer))]
     [HarmonyPatch("MainMenuOnGUI")]
     internal static class MainMenuPatch
     {
-        // OnGUI runs many times per second, so without this flag the window
-        // would be added again and again. Reset only when the game process
-        // restarts, which gives us exactly "once per launch".
+        private const string AboutText =
+            "RimRTS is a total-conversion mod that turns RimWorld into a real-time strategy game: " +
+            "squads, direct unit control, and skirmish matches instead of colony management.\n\n" +
+            "Currently in development. First milestone: a skirmish vertical slice — " +
+            "pick a team, drop into a map, fight, win or lose, restart.\n\n" +
+            "v0.1.0 · github.com/Langoman/RimRTS";
+
+        // OnGUI runs many times per second; without this guard the dialog would be
+        // queued over and over. It resets on process restart = "once per launch".
         private static bool shown;
 
         [HarmonyPostfix]
@@ -30,7 +35,13 @@ namespace RimRTS.Patches
             }
 
             shown = true;
-            Find.WindowStack.Add(new Dialog_RimRTSInfo());
+
+            // TaggedString has an implicit conversion from string, and the dialog's
+            // other parameters are optional, hence this compact call.
+            Find.WindowStack.Add(new Dialog_MessageBox(
+                AboutText,
+                buttonAText: "Close",
+                title: "RimRTS"));
         }
     }
 }
