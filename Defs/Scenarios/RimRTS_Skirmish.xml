@@ -7,8 +7,8 @@
     the two vanilla scenario parts a match needs right now:
 
       * ConfigureStartingPawns - the vanilla "choose your starter pawns" page that
-        runs after the map is chosen. pawnCount is a temporary placeholder; the
-        team-selection milestone replaces this with squad data.
+        runs after the map is chosen. Three pawns per side is the first skirmish
+        size; the equipment screen after this page arms them.
       * PlayerPawnsArriveMethod - drop pods, hidden from the scenario UI.
   -->
   <ScenarioDef ParentName="ScenarioBase">
@@ -22,8 +22,8 @@
       <parts>
         <li Class="ScenPart_ConfigPage_ConfigureStartingPawns">
           <def>ConfigPage_ConfigureStartingPawns</def>
-          <pawnCount>1</pawnCount>
-          <pawnChoiceCount>8</pawnChoiceCount>
+          <pawnCount>3</pawnCount>
+          <pawnChoiceCount>6</pawnChoiceCount>
         </li>
 
         <li Class="ScenPart_PlayerPawnsArriveMethod">

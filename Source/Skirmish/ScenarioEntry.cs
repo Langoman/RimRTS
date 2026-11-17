@@ -18,8 +18,9 @@ namespace RimRTS.Skirmish
     ///  - the starting-site page is replaced by <see cref="Page_ChooseBiome"/>;
     ///  - the ideology preset page is never shown, but the state it would have created is
     ///    produced by <see cref="ApplyIdeologySetup"/>.
-    /// After the biome screen the vanilla scenario config pages continue and the match
-    /// starts through the regular PageUtility.InitGameStart() path.
+    /// After the biome screen the vanilla scenario config pages continue (the starting-pawn
+    /// choice), then <see cref="Page_EquipSquad"/> arms those pawns, and the match starts
+    /// through the regular PageUtility.InitGameStart() path.
     /// </summary>
     public static class ScenarioEntry
     {
@@ -49,18 +50,31 @@ namespace RimRTS.Skirmish
             // Walk the vanilla chain until the first page that still belongs to match
             // setup (normally a scenario config page or the end of the chain). The pages
             // we skip are: storyteller, planet settings, starting site, ideology preset.
-            Page followUpPage = FindFirstPageAfterVanillaSetup(origin.next);
+            Page firstConfigPage = FindFirstPageAfterVanillaSetup(origin.next);
 
-            Page_ChooseBiome biomePage = new Page_ChooseBiome { next = followUpPage };
-            if (followUpPage != null)
+            // Equipment comes last, after the vanilla config pages (the pawn choice): the
+            // player picks pawns first, arms them second, and only then starts the match.
+            // Splicing at the end of the chain keeps this independent of how many config
+            // pages the scenario has.
+            Page_EquipSquad equipPage = new Page_EquipSquad();
+            if (firstConfigPage != null)
             {
-                followUpPage.prev = biomePage;
+                Page lastConfigPage = LastPage(firstConfigPage);
+                equipPage.next = lastConfigPage.next;
+                equipPage.nextAct = lastConfigPage.nextAct;
+                equipPage.prev = lastConfigPage;
+                lastConfigPage.next = equipPage;
+                lastConfigPage.nextAct = null;
             }
             else
             {
-                // No scenario config pages left: finishing the biome screen starts the match.
-                biomePage.nextAct = PageUtility.InitGameStart;
+                equipPage.nextAct = PageUtility.InitGameStart;
             }
+
+            // The biome screen opens the remaining chain: config pages, then equipment.
+            Page afterBiomePage = firstConfigPage ?? equipPage;
+            Page_ChooseBiome biomePage = new Page_ChooseBiome { next = afterBiomePage };
+            afterBiomePage.prev = biomePage;
 
             // Generate the planet with vanilla code. PreOpen() fills the page's planet
             // defaults (seed, coverage, rainfall, factions, ...) exactly as the real page
@@ -106,6 +120,15 @@ namespace RimRTS.Skirmish
                 }
             }
             return null;
+        }
+
+        private static Page LastPage(Page page)
+        {
+            while (page.next != null)
+            {
+                page = page.next;
+            }
+            return page;
         }
 
         private static bool IsVanillaSetupPage(Page page)
