@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!--
+    The skirmish scenario. It inherits everything structural from Core's abstract
+    ScenarioBase (player faction, surface layer, planet-layer part) and adds only
+    the two vanilla scenario parts a match needs right now:
+
+      * ConfigureStartingPawns - the vanilla "choose your starter pawns" page that
+        runs after the map is chosen. pawnCount is a temporary placeholder; the
+        team-selection milestone replaces this with squad data.
+      * PlayerPawnsArriveMethod - drop pods, hidden from the scenario UI.
+  -->
+  <ScenarioDef ParentName="ScenarioBase">
+    <defName>RimRTS_Skirmish</defName>
+    <label>Skirmish</label>
+    <description>A RimRTS skirmish: choose a landing site on the surface and a squad, and then fight.</description>
+
+    <scenario>
+      <summary>Skirmish: pick a map, then fight.</summary>
+
+      <parts>
+        <li Class="ScenPart_ConfigPage_ConfigureStartingPawns">
+          <def>ConfigPage_ConfigureStartingPawns</def>
+          <pawnCount>1</pawnCount>
+          <pawnChoiceCount>8</pawnChoiceCount>
+        </li>
+
+        <li Class="ScenPart_PlayerPawnsArriveMethod">
+          <def>PlayerPawnsArriveMethod</def>
+          <method>DropPods</method>
+          <visible>false</visible>
+        </li>
+      </parts>
+    </scenario>
+  </ScenarioDef>
+
+</Defs>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+  <!-- Renames the vanilla main-menu entry. Its action is replaced in code by
+       MainMenuNewGamePatch; this file only changes the visible label.
+       Delete this file to keep the vanilla "New colony" label. -->
+  <NewColony>Start match</NewColony>
+
+</LanguageData>
