@@ -4,13 +4,11 @@ using Verse;
 
 namespace RimRTS.Patches
 {
-    /// <summary>
     /// Shows the "about this mod" dialog on the title screen, once per game launch.
     ///
     /// This version deliberately references no UnityEngine types, so it builds with
     /// only Assembly-CSharp.dll + 0Harmony.dll. It uses vanilla's Verse.Dialog_MessageBox,
     /// whose public constructor takes only Verse.TaggedString/string/Action/bool types.
-    /// </summary>
     [HarmonyPatch(typeof(MainMenuDrawer))]
     [HarmonyPatch("MainMenuOnGUI")]
     internal static class MainMenuPatch

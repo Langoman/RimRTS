@@ -1,5 +1,9 @@
 using HarmonyLib;
 using Verse;
+using System.Reflection;
+using System;
+using RimWorld;
+using RimWorld.Planet;
  
 namespace RimRTS
 {
