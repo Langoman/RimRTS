@@ -1,0 +1,24 @@
+# RimRTS weapon blacklist
+# ------------------------------------------------------------------------------
+# Weapons listed in this file never appear in the squad weapon picker.
+#
+# HOW TO USE
+#   1. Add one ThingDef defName per line, exactly as it appears in the def XML
+#      (the <defName> value - for example Gun_HeavySMG, not the <label>).
+#   2. Lines starting with '#' are comments. Text after a '#' on the same line is
+#      also ignored. Blank lines are ignored. Case does not matter.
+#   3. Save this file, then restart RimWorld. The file is read once per game
+#      session, the first time the squad screen opens.
+#   4. Unknown defNames only write a warning to Player.log; they never break a
+#      match, so a typo cannot ruin a game.
+#   5. This filters the PLAYER's weapon picker only. The defs still exist in the
+#      game (other factions, raids, traders, drops are untouched).
+#
+# WHY
+#   Use it for weapons that are nonsense in a skirmish (unwieldy, late-tech
+#   leftovers, quest items) or for testing a match without one specific gun.
+#
+# EXAMPLES (remove the leading '#' to activate one)
+# Gun_HeavySMG
+# MeleeWeapon_LongSword
+# ------------------------------------------------------------------------------

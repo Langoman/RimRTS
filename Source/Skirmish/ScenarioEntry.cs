@@ -49,7 +49,9 @@ namespace RimRTS.Skirmish
 
             // Walk the vanilla chain until the first page that still belongs to match
             // setup (normally a scenario config page or the end of the chain). The pages
-            // we skip are: storyteller, planet settings, starting site, ideology preset.
+            // we skip are: storyteller, planet settings, starting site, ideology preset,
+            // and the vanilla starting-pawn chooser (the squad page picks the pawns, so it
+            // also owns how many soldiers the player takes).
             Page firstConfigPage = FindFirstPageAfterVanillaSetup(origin.next);
 
             // Equipment comes last, after the vanilla config pages (the pawn choice): the
@@ -136,7 +138,8 @@ namespace RimRTS.Skirmish
             return page is Page_SelectStoryteller
                 || page is Page_CreateWorldParams
                 || page is Page_SelectStartingSite
-                || page is Page_ChooseIdeoPreset;
+                || page is Page_ChooseIdeoPreset
+                || page is Page_ConfigureStartingPawns;
         }
 
         /// <summary>

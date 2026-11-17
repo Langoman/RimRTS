@@ -6,9 +6,9 @@
     ScenarioBase (player faction, surface layer, planet-layer part) and adds only
     the two vanilla scenario parts a match needs right now:
 
-      * ConfigureStartingPawns - the vanilla "choose your starter pawns" page that
-        runs after the map is chosen. Three pawns per side is the first skirmish
-        size; the equipment screen after this page arms them.
+      * ConfigureStartingPawns - the vanilla part that generates the candidate pool on the
+        squad screen; the player chooses how many of the eight candidates to take. The
+        vanilla pawn-chooser page is skipped, so this part only provides generation.
       * PlayerPawnsArriveMethod - drop pods, hidden from the scenario UI.
   -->
   <ScenarioDef ParentName="ScenarioBase">
@@ -22,8 +22,8 @@
       <parts>
         <li Class="ScenPart_ConfigPage_ConfigureStartingPawns">
           <def>ConfigPage_ConfigureStartingPawns</def>
-          <pawnCount>3</pawnCount>
-          <pawnChoiceCount>6</pawnChoiceCount>
+          <pawnCount>8</pawnCount>
+          <pawnChoiceCount>8</pawnChoiceCount>
         </li>
 
         <li Class="ScenPart_PlayerPawnsArriveMethod">
