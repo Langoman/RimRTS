@@ -18,7 +18,43 @@
 #   Use it for weapons that are nonsense in a skirmish (unwieldy, late-tech
 #   leftovers, quest items) or for testing a match without one specific gun.
 #
-# EXAMPLES (remove the leading '#' to activate one)
-# Gun_HeavySMG
-# MeleeWeapon_LongSword
+# THE LISTS BELOW are the defaults RimRTS ships with. Delete a line to allow
+# that weapon again.
 # ------------------------------------------------------------------------------
+
+# --- Turret and artillery guns ------------------------------------------------
+# These are the "gun" half of a building turret, not hand-held weapons. Vanilla
+# does not grant them to pawns, so letting a soldier "hold" one only produces a
+# pawn that cannot aim or fire like a normal rifle.
+Gun_MiniTurret
+Gun_MiniTurretMech
+Gun_AutocannonTurret
+Gun_TurretSniper
+Gun_TurretFoam
+Gun_RocketswarmLauncher
+Gun_ChargeBlasterHeavyTurret
+Gun_ChargeBlasterTurret
+Gun_InfernoCannonTurret
+Gun_AncientArmoredTurret
+Gun_TacticalTurret
+Artillery_Mortar
+Artillery_AutoMortar
+
+# --- Mechanoid weapons --------------------------------------------------------
+# Enemy-team hardware (Biotech/Core). Most of these also have destroyOnDrop set,
+# so a pawn that carried one would lose it the moment it is downed. The tech-level
+# step reserves the Mechanoid tech level for enemy teams; blacklisting them here
+# keeps the player picker honest even before that restriction exists.
+Gun_ChargeBlasterHeavy
+Gun_InfernoCannon
+Gun_Needle
+Gun_ThumpCannon
+Gun_HellsphereCannon
+Gun_ToxicNeedle
+Gun_NeedleLauncher
+Gun_BeamGraser
+Gun_MiniShotgun
+Gun_Slugthrower
+Gun_Spiner
+Gun_MiniFlameblaster
+Gun_Scattergun
