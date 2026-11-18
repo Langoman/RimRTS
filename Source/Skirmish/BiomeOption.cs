@@ -30,6 +30,10 @@ namespace RimRTS.Skirmish
         /// <summary>
         /// Builds the biome list from the generated planet, ordered by label so the screen
         /// is deterministic. Water, background and impassable biomes are not landing sites.
+        ///
+        /// Only Flat world tiles are collected: vanilla map generation turns hills and
+        /// mountains into rock, and a skirmish battlefield should be open ground, so hilliness
+        /// is filtered here at the data layer instead of patching map generation.
         /// </summary>
         public static List<BiomeOption> CollectFrom(WorldGrid grid)
         {
@@ -39,6 +43,11 @@ namespace RimRTS.Skirmish
             {
                 BiomeDef biome = tile.PrimaryBiome;
                 if (!IsLandable(biome))
+                {
+                    continue;
+                }
+
+                if (tile.hilliness != Hilliness.Flat)
                 {
                     continue;
                 }

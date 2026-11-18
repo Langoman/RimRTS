@@ -51,7 +51,7 @@ namespace RimRTS.Skirmish
 
             if (!selected.TryGetRandomTile(out PlanetTile tile))
             {
-                Log.Error("[RimRTS] Biome '" + selected.Def.defName + "' has no landable surface tile.");
+                Log.Error("[RimRTS] Biome '" + selected.Def.defName + "' has no flat landable surface tile.");
                 return;
             }
 
@@ -71,14 +71,14 @@ namespace RimRTS.Skirmish
 
             Widgets.Label(
                 new Rect(0f, Page.TitleAreaHeight, inRect.width, HintHeight),
-                "Pick the biome to land in. The planet is generated for this match.");
+                "Pick the biome to land in. Only flat tiles are offered, so the battle map stays open and mountain-free.");
 
             float listTop = Page.TitleAreaHeight + HintHeight + ListPadding;
             Rect listRect = new Rect(0f, listTop, inRect.width, inRect.height - listTop - Page.BottomButHeight);
 
             if (options == null || options.Count == 0)
             {
-                Widgets.Label(listRect, "No landable biomes were generated for this planet.");
+                Widgets.Label(listRect, "No flat landable biomes were generated for this planet.");
             }
             else
             {
