@@ -165,6 +165,40 @@ namespace RimRTS.Skirmish
                 .ToList();
         }
 
+        /// <summary>
+        /// True for items built from a material (steel swords, plasteel armor, cloth shirts...).
+        /// Only these get the material chooser; guns have a fixed composition.
+        /// </summary>
+        public static bool CanBeMadeFromStuff(ThingDef def)
+        {
+            return def != null
+                && def.MadeFromStuff
+                && def.stuffCategories != null
+                && def.stuffCategories.Count > 0;
+        }
+
+        /// <summary>
+        /// Materials the item may be made from, capped by the player's tech tier. Vanilla's
+        /// GenStuff does the category matching and the generation-eligibility check.
+        /// </summary>
+        public static List<ThingDef> AvailableStuffs(ThingDef def)
+        {
+            if (!CanBeMadeFromStuff(def))
+            {
+                return new List<ThingDef>();
+            }
+
+            return GenStuff.AllowedStuffsFor(def, MaxTechLevel)
+                .OrderBy(stuff => stuff.label)
+                .ToList();
+        }
+
+        /// <summary>Vanilla's default material for the item, used when no explicit pick was made.</summary>
+        public static ThingDef DefaultStuff(ThingDef def)
+        {
+            return CanBeMadeFromStuff(def) ? GenStuff.DefaultStuffFor(def) : null;
+        }
+
         public static float Budget(IEnumerable<Pawn> squad)
         {
             return squad.Sum(PawnValue);
@@ -214,8 +248,12 @@ namespace RimRTS.Skirmish
         /// (PawnComponentsUtility.CreateInitialComponents is called during generation), so
         /// this works before the map exists. The map-spawn step does not strip equipment,
         /// so the choice survives into the match.
+        ///
+        /// Items with <see cref="CanBeMadeFromStuff"/> are built from <paramref name="stuff"/>,
+        /// or from the vanilla default material when the caller did not pick one, because
+        /// ThingMaker with a null stuff on a MadeFromStuff def produces an invalid item.
         /// </summary>
-        public static void EquipWeapon(Pawn pawn, ThingDef weaponDef)
+        public static void EquipWeapon(Pawn pawn, ThingDef weaponDef, ThingDef stuff = null)
         {
             if (pawn == null || pawn.equipment == null)
             {
@@ -233,7 +271,11 @@ namespace RimRTS.Skirmish
                 return;
             }
 
-            if (!(ThingMaker.MakeThing(weaponDef) is ThingWithComps weapon))
+            ThingDef resolvedStuff = CanBeMadeFromStuff(weaponDef)
+                ? stuff ?? DefaultStuff(weaponDef)
+                : null;
+
+            if (!(ThingMaker.MakeThing(weaponDef, resolvedStuff) is ThingWithComps weapon))
             {
                 Log.Error("[RimRTS] Weapon def '" + weaponDef.defName + "' is not a ThingWithComps.");
                 return;
@@ -250,9 +292,11 @@ namespace RimRTS.Skirmish
 
         /// <summary>
         /// Puts one piece of apparel on a pawn. Vanilla Wear() drops whatever shares the same
-        /// layer/body part, so picking a helmet after a hat simply replaces it.
+        /// layer/body part, so picking a helmet after a hat simply replaces it. Stuffed apparel
+        /// (cloth, leathers, metals) is built from <paramref name="stuff"/>, or the vanilla
+        /// default material when none was picked.
         /// </summary>
-        public static void WearApparel(Pawn pawn, ThingDef apparelDef)
+        public static void WearApparel(Pawn pawn, ThingDef apparelDef, ThingDef stuff = null)
         {
             if (pawn == null || pawn.apparel == null)
             {
@@ -260,7 +304,16 @@ namespace RimRTS.Skirmish
                 return;
             }
 
-            if (!(ThingMaker.MakeThing(apparelDef) is Apparel apparel))
+            if (apparelDef == null)
+            {
+                return;
+            }
+
+            ThingDef resolvedStuff = CanBeMadeFromStuff(apparelDef)
+                ? stuff ?? DefaultStuff(apparelDef)
+                : null;
+
+            if (!(ThingMaker.MakeThing(apparelDef, resolvedStuff) is Apparel apparel))
             {
                 Log.Error("[RimRTS] Apparel def '" + apparelDef.defName + "' is not an Apparel.");
                 return;
@@ -291,7 +344,8 @@ namespace RimRTS.Skirmish
         /// <summary>
         /// Drops any carried weapon or worn apparel above the team's tech tier. Runs when the
         /// player lowers the squad's tech level after picking gear, so the match can never start
-        /// with illegal equipment.
+        /// with illegal equipment. A material above the tier also disqualifies the piece: a
+        /// plasteel longsword is out for a medieval team even though the def itself is medieval.
         /// </summary>
         public static void RemoveAboveTechLevel(Pawn pawn, TechLevel maxTechLevel)
         {
@@ -300,11 +354,14 @@ namespace RimRTS.Skirmish
                 return;
             }
 
-            if (pawn.equipment != null
-                && pawn.equipment.Primary != null
-                && pawn.equipment.Primary.def.techLevel > maxTechLevel)
+            if (pawn.equipment != null && pawn.equipment.Primary != null)
             {
-                pawn.equipment.DestroyEquipment(pawn.equipment.Primary);
+                ThingWithComps weapon = pawn.equipment.Primary;
+                if (weapon.def.techLevel > maxTechLevel
+                    || (weapon.Stuff != null && weapon.Stuff.techLevel > maxTechLevel))
+                {
+                    pawn.equipment.DestroyEquipment(weapon);
+                }
             }
 
             if (pawn.apparel == null)
@@ -314,7 +371,8 @@ namespace RimRTS.Skirmish
 
             foreach (Apparel apparel in pawn.apparel.WornApparel.ToList())
             {
-                if (apparel.def.techLevel > maxTechLevel)
+                if (apparel.def.techLevel > maxTechLevel
+                    || (apparel.Stuff != null && apparel.Stuff.techLevel > maxTechLevel))
                 {
                     pawn.apparel.Remove(apparel);
                 }

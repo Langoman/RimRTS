@@ -23,6 +23,7 @@ namespace RimRTS.Skirmish
         private readonly Action onNone;
         private readonly bool allowNone;
         private readonly string header;
+        private readonly Dictionary<ThingDef, float> previewPrices = new Dictionary<ThingDef, float>();
         private Vector2 scrollPosition;
 
         public Dialog_PickThing(
@@ -88,8 +89,27 @@ namespace RimRTS.Skirmish
                 CellHeight);
         }
 
-        private void DrawCell(Rect cell, ThingDef def)
+        /// <summary>
+        /// Grid price. Stuffed items are shown at the vanilla default material here; the next
+        /// step (the material chooser) shows the exact price for every alternative.
+        /// </summary>
+        private float PreviewPrice(ThingDef def)
         {
+            if (previewPrices.TryGetValue(def, out float price))
+            {
+                return price;
+            }
+
+            ThingDef stuff = SquadLoadout.CanBeMadeFromStuff(def) ? SquadLoadout.DefaultStuff(def) : null;
+            price = stuff != null
+                ? ThingMaker.MakeThing(def, stuff).MarketValue
+                : def.BaseMarketValue;
+
+            previewPrices[def] = price;
+            return price;
+        }
+
+        private void DrawCell(Rect cell, ThingDef def)        {
             Widgets.DrawBoxSolid(cell, new Color(0.16f, 0.16f, 0.16f, 0.55f));
             Widgets.DrawBox(cell, 1);
 
@@ -111,9 +131,9 @@ namespace RimRTS.Skirmish
                 Text.Font = GameFont.Tiny;
                 Widgets.Label(
                     new Rect(cell.x + 6f, cell.y + 94f, cell.width - 12f, 16f),
-                    Mathf.RoundToInt(def.BaseMarketValue) + " silver");
+                    Mathf.RoundToInt(PreviewPrice(def)) + " silver");
                 Text.Font = GameFont.Small;
-                TooltipHandler.TipRegion(cell, def.LabelCap + "\n" + Mathf.RoundToInt(def.BaseMarketValue) + " silver");
+                TooltipHandler.TipRegion(cell, def.LabelCap + "\n" + Mathf.RoundToInt(PreviewPrice(def)) + " silver");
             }
             else
             {

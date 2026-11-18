@@ -430,7 +430,7 @@ namespace RimRTS.Skirmish
 
             Widgets.Label(
                 new Rect(iconRect.xMax + 10f, y + 26f, 300f, 24f),
-                weapon != null ? (string)weapon.def.LabelCap : "No weapon");
+                weapon != null ? (string)weapon.LabelCap : "No weapon");
 
             if (Widgets.ButtonText(new Rect(iconRect.xMax + 10f, y + 54f, 150f, 26f), "Choose weapon"))
             {
@@ -521,7 +521,7 @@ namespace RimRTS.Skirmish
         {
             Find.WindowStack.Add(new Dialog_PickThing(
                 weapons,
-                def => SquadLoadout.EquipWeapon(pawn, def),
+                def => PickWeapon(pawn, def),
                 "Choose a weapon",
                 true,
                 () => SquadLoadout.EquipWeapon(pawn, null)));
@@ -531,9 +531,57 @@ namespace RimRTS.Skirmish
         {
             Find.WindowStack.Add(new Dialog_PickThing(
                 apparelDefs,
-                def => SquadLoadout.WearApparel(pawn, def),
+                def => PickApparel(pawn, def),
                 "Choose clothing or armor",
                 false));
+        }
+
+        /// <summary>
+        /// Two-step gear pick: the item first, then the material when the item is made from one.
+        /// Items with a fixed composition (guns) equip straight away.
+        /// </summary>
+        private void PickWeapon(Pawn pawn, ThingDef weaponDef)
+        {
+            if (weaponDef == null || !SquadLoadout.CanBeMadeFromStuff(weaponDef))
+            {
+                SquadLoadout.EquipWeapon(pawn, weaponDef);
+                return;
+            }
+
+            List<ThingDef> stuffs = SquadLoadout.AvailableStuffs(weaponDef);
+            if (stuffs.Count == 0)
+            {
+                SquadLoadout.EquipWeapon(pawn, weaponDef);
+                return;
+            }
+
+            Find.WindowStack.Add(new Dialog_PickStuff(
+                weaponDef,
+                stuffs,
+                stuff => SquadLoadout.EquipWeapon(pawn, weaponDef, stuff),
+                "Choose " + weaponDef.label + " material"));
+        }
+
+        private void PickApparel(Pawn pawn, ThingDef apparelDef)
+        {
+            if (apparelDef == null || !SquadLoadout.CanBeMadeFromStuff(apparelDef))
+            {
+                SquadLoadout.WearApparel(pawn, apparelDef);
+                return;
+            }
+
+            List<ThingDef> stuffs = SquadLoadout.AvailableStuffs(apparelDef);
+            if (stuffs.Count == 0)
+            {
+                SquadLoadout.WearApparel(pawn, apparelDef);
+                return;
+            }
+
+            Find.WindowStack.Add(new Dialog_PickStuff(
+                apparelDef,
+                stuffs,
+                stuff => SquadLoadout.WearApparel(pawn, apparelDef, stuff),
+                "Choose " + apparelDef.label + " material"));
         }
     }
 }
