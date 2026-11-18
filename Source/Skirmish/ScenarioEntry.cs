@@ -35,6 +35,10 @@ namespace RimRTS.Skirmish
                 return;
             }
 
+            // A fresh match starts from the default team setup (industrial tier); the squad
+            // screen lets the player change it for this match only.
+            MatchSetup.Reset();
+
             // BeginScenarioConfiguration() is the vanilla entry point for a new game:
             // it clears caches, creates Game + GameInitData, assigns the scenario,
             // runs the scenario's PreConfigure(), and links the vanilla config-page

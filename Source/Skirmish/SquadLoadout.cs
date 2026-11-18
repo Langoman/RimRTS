@@ -24,10 +24,11 @@ namespace RimRTS.Skirmish
         public const string WeaponBlacklistFileName = "WeaponBlacklist.txt";
 
         /// <summary>
-        /// Weapons and apparel up to this tech level are selectable. The tech-level step will
-        /// turn this into a per-team choice, so it stays a single named constant.
+        /// Highest gear tier the player's team may use. Chosen per match on the squad screen
+        /// (<see cref="MatchSetup.PlayerTech"/>); the enemy team has its own tier stored in
+        /// <see cref="MatchSetup.EnemyTech"/>.
         /// </summary>
-        public const TechLevel MaxTechLevel = TechLevel.Industrial;
+        public static TechLevel MaxTechLevel => MatchSetup.WeaponTechLevel(MatchSetup.PlayerTech);
 
         /// <summary>
         /// Squad pawns get this level in every skill except the two the player picks on the
@@ -284,6 +285,39 @@ namespace RimRTS.Skirmish
             foreach (Apparel apparel in pawn.apparel.WornApparel.ToList())
             {
                 pawn.apparel.Remove(apparel);
+            }
+        }
+
+        /// <summary>
+        /// Drops any carried weapon or worn apparel above the team's tech tier. Runs when the
+        /// player lowers the squad's tech level after picking gear, so the match can never start
+        /// with illegal equipment.
+        /// </summary>
+        public static void RemoveAboveTechLevel(Pawn pawn, TechLevel maxTechLevel)
+        {
+            if (pawn == null)
+            {
+                return;
+            }
+
+            if (pawn.equipment != null
+                && pawn.equipment.Primary != null
+                && pawn.equipment.Primary.def.techLevel > maxTechLevel)
+            {
+                pawn.equipment.DestroyEquipment(pawn.equipment.Primary);
+            }
+
+            if (pawn.apparel == null)
+            {
+                return;
+            }
+
+            foreach (Apparel apparel in pawn.apparel.WornApparel.ToList())
+            {
+                if (apparel.def.techLevel > maxTechLevel)
+                {
+                    pawn.apparel.Remove(apparel);
+                }
             }
         }
     }

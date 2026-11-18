@@ -19,6 +19,8 @@ namespace RimRTS.Skirmish
     public sealed class Page_EquipSquad : Page
     {
         private const float HintHeight = 24f;
+        private const float TeamsHeight = 54f;
+        private const float TeamButtonWidth = 318f;
         private const float RowHeight = 68f;
         private const float RowSpacing = 4f;
         private const float BudgetHeight = 26f;
@@ -94,12 +96,16 @@ namespace RimRTS.Skirmish
             Widgets.Label(new Rect(0f, 0f, inRect.width, Page.TitleAreaHeight), PageTitle);
             Text.Font = GameFont.Small;
 
+            float teamsY = Page.TitleAreaHeight;
+            DrawTeams(new Rect(0f, teamsY, inRect.width, TeamsHeight));
+
+            float hintY = teamsY + TeamsHeight + 4f;
             Widgets.Label(
-                new Rect(0f, Page.TitleAreaHeight, inRect.width - RandomizeAllButtonWidth - 8f, HintHeight),
+                new Rect(0f, hintY, inRect.width - RandomizeAllButtonWidth - 8f, HintHeight),
                 "Tick soldiers on the left, click one to inspect it, and set Shooting/Melee here (other skills are 5).");
 
             if (Widgets.ButtonText(
-                    new Rect(inRect.width - RandomizeAllButtonWidth, Page.TitleAreaHeight, RandomizeAllButtonWidth, HintHeight),
+                    new Rect(inRect.width - RandomizeAllButtonWidth, hintY, RandomizeAllButtonWidth, HintHeight),
                     "Randomize traits (all)"))
             {
                 foreach (Pawn pawn in SelectedPawns())
@@ -108,7 +114,7 @@ namespace RimRTS.Skirmish
                 }
             }
 
-            float top = Page.TitleAreaHeight + HintHeight;
+            float top = hintY + HintHeight;
             float bottom = inRect.height - Page.BottomButHeight - BudgetHeight;
 
             DrawPool(new Rect(0f, top, LeftColumnWidth, bottom - top));
@@ -117,9 +123,117 @@ namespace RimRTS.Skirmish
             Widgets.Label(
                 new Rect(0f, bottom + 4f, inRect.width, BudgetHeight),
                 "Squad: " + selected.Count + " soldiers  |  used budget: "
-                    + Mathf.RoundToInt(SquadLoadout.Budget(SelectedPawns())) + " silver (enemy gets the same)");
+                    + Mathf.RoundToInt(SquadLoadout.Budget(SelectedPawns())) + " silver (enemy gets the same, "
+                    + MatchSetup.Label(MatchSetup.EnemyTech) + " tech)");
 
             DoBottomButtons(inRect, "Start match");
+        }
+
+        private void DrawTeams(Rect rect)
+        {
+            DrawTeamButton(
+                new Rect(rect.x, rect.y, TeamButtonWidth, rect.height),
+                "Your team",
+                MatchSetup.PlayerTech,
+                true);
+
+            DrawTeamButton(
+                new Rect(rect.x + TeamButtonWidth + 8f, rect.y, TeamButtonWidth, rect.height),
+                "Enemy team",
+                MatchSetup.EnemyTech,
+                false);
+        }
+
+        private void DrawTeamButton(Rect rect, string caption, TeamTech tech, bool player)
+        {
+            Widgets.DrawBoxSolid(rect, new Color(0.10f, 0.10f, 0.10f, 0.45f));
+            Widgets.DrawBox(rect, 1);
+
+            Rect iconRect = new Rect(rect.x + 5f, rect.y + 5f, rect.height - 10f, rect.height - 10f);
+            Texture2D icon = TeamIcon(player, tech);
+            if (icon != null)
+            {
+                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
+            }
+            else
+            {
+                Widgets.DrawBoxSolid(iconRect, new Color(0.35f, 0.35f, 0.35f));
+            }
+
+            Widgets.DrawBox(iconRect, 1);
+
+            float textX = iconRect.xMax + 8f;
+            float textWidth = rect.xMax - textX - 6f;
+
+            Widgets.Label(new Rect(textX, rect.y + 6f, textWidth, 22f), caption);
+            Text.Font = GameFont.Tiny;
+            Widgets.Label(
+                new Rect(textX, rect.y + 28f, textWidth, 20f),
+                MatchSetup.Label(tech) + " tech  (click to change)");
+            Text.Font = GameFont.Small;
+
+            if (Widgets.ButtonInvisible(rect))
+            {
+                OpenTechMenu(player);
+            }
+        }
+
+        private Texture2D TeamIcon(bool player, TeamTech tech)
+        {
+            FactionDef factionDef = player
+                ? (Faction.OfPlayerSilentFail != null ? Faction.OfPlayerSilentFail.def : FactionDefOf.PlayerColony)
+                : MatchSetup.IconFaction(tech);
+
+            if (factionDef != null && !string.IsNullOrEmpty(factionDef.factionIconPath))
+            {
+                return factionDef.FactionIcon;
+            }
+
+            FactionDef fallback = MatchSetup.IconFaction(tech);
+            return fallback != null && !string.IsNullOrEmpty(fallback.factionIconPath) ? fallback.FactionIcon : null;
+        }
+
+        private void OpenTechMenu(bool player)
+        {
+            TeamTech current = player ? MatchSetup.PlayerTech : MatchSetup.EnemyTech;
+            TeamTech[] choices = player ? MatchSetup.PlayerChoices : MatchSetup.EnemyChoices;
+
+            List<FloatMenuOption> options = new List<FloatMenuOption>();
+            foreach (TeamTech choice in choices)
+            {
+                TeamTech selectedTech = choice;
+                string label = MatchSetup.Label(selectedTech) + (selectedTech == current ? "  (current)" : "");
+                options.Add(new FloatMenuOption(label, delegate
+                {
+                    if (player)
+                    {
+                        MatchSetup.SetPlayerTech(selectedTech);
+                        RefreshTechPools();
+                    }
+                    else
+                    {
+                        MatchSetup.SetEnemyTech(selectedTech);
+                    }
+                }));
+            }
+
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        /// <summary>
+        /// Re-reads the gear pools after the player's tier changes and drops anything that the
+        /// new tier no longer allows.
+        /// </summary>
+        private void RefreshTechPools()
+        {
+            weapons = SquadLoadout.AvailableWeapons();
+            apparelDefs = SquadLoadout.AvailableApparel();
+
+            TechLevel maxTech = SquadLoadout.MaxTechLevel;
+            foreach (Pawn pawn in SelectedPawns())
+            {
+                SquadLoadout.RemoveAboveTechLevel(pawn, maxTech);
+            }
         }
 
         private void DrawPool(Rect rect)
