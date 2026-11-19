@@ -6,11 +6,11 @@ Source/bin/
 Source/obj/
 *.user
 .vs/
-/tools/
 .build/DEVELOPMENT_GUIDE.docx
-/docs/
 Source/bin/
 Source/obj/
 *.user
 .vs/
 /.build/
+docs/DEVELOPMENT_GUIDE.md
+docs/DEVELOPMENT_GUIDE.pdf

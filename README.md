@@ -7,11 +7,12 @@ unit control, and skirmish matches instead of colony management, focusing comple
 
 ## Status
 
-Early design/scaffolding. Nothing is implemented yet.
+Early development. Features already present include
 
 ## Documentation
-
-As the documentation is just a rough draft made by AI, it isn't available yet.
+ - Most dev docs are still not available.
+- [Custom battlefields](docs/CUSTOM_MAPS.md): rectangular biome maps and hand-authored
+  prefab maps, plus the prefab authoring tooling.
 
 ## Requirements for development
 
@@ -24,7 +25,7 @@ As the documentation is just a rough draft made by AI, it isn't available yet.
 - **Skirmish gamemode:** Choose a budget, tech level, enviroment and team to fight. Maps made with prefabs.
 - **Stripping vanilla colony content and systems for less overhead**
 - **Dynamic fog of war system**
-- **Combat Extended, Simple Camera Setting and Layered Wall Destruction as requirements for playing**
+- **Combat Extended and Layered Wall Destruction as requirements for playing**
 - **Full compatibility with:** Vanilla Psycasts Expanded, WASDed Pawn, RimHUD, performance optimizing mods, Vanilla Props Extended.
 - **Making the AI smarter**
 - **Pre-built beautiful maps!**
