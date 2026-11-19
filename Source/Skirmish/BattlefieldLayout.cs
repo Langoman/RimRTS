@@ -90,6 +90,17 @@ namespace RimRTS.Skirmish
 
             IntVec3 origin = new IntVec3((map.Size.x - prefabSize.x) / 2, 0, (map.Size.z - prefabSize.z) / 2);
 
+            // SpawnPrefab treats the position it receives as the prefab's CENTER cell, not its
+            // top-left corner: internally it builds GenAdj.OccupiedRect(anchor, rot, size) and
+            // takes one of that rect's corners as the root. Passing the corner origin directly
+            // shifted the whole prefab up-left by roughly half its size, which is why terrain
+            // ended up at negative coordinates. The reverse of that formula is anchor = corner +
+            // (size - 1) / 2, matching the integer division used by OccupiedRect.
+            IntVec3 anchor = new IntVec3(
+                origin.x + (prefabSize.x - 1) / 2,
+                0,
+                origin.z + (prefabSize.z - 1) / 2);
+
             // The prefab is meant to define the whole battlefield, so whatever procedural
             // generation produced (plants, rocks, ancient dangers, roofs over those rooms,
             // terrain decorations) has to go first, otherwise prefab walls/cover can end up
@@ -103,7 +114,7 @@ namespace RimRTS.Skirmish
                 PrefabUtility.SpawnPrefab(
                     prefab,
                     map,
-                    origin,
+                    anchor,
                     Rot4.North,
                     Faction.OfPlayerSilentFail,
                     null,
